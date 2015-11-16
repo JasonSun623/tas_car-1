@@ -1,0 +1,10 @@
+As it simplifies development and testing significantly, when you have a working simulator we decided to setup one for the TAS course.
+It is based on gazebo, the standard simulator for ros based environments, which provides a decent physics engine and was even used for the DARPA virtual robotics challange.
+Our model is based on the "ackerman_vehicle" package, which was adapted considering wheel and chassis dimensions. Additionally laser scanners, an imu and a magnetic sensor where installed on the model, to provide the same sensors as the real car. The parameters for that sensors where chosen to fit as good as possible to the reality, which for example means equal viewing angles, maximum ranges, resolution or noise for the laser scanners.
+Furthermore a node had to be written, that does the conversion between the standart ros speed command "cmd_vel" and the ackermann_cmd, thus angular speed had to be transformed to a steering angle, that is dependent on the length and speed of the car.
+The world in gazebo is built up manually and is therefore a simplified version of the grayscale map provided in the TAS repositiory.
+These are screenshots of the gazebo simulator on the left hand side and rviz on the right side.
+You can see the walls, the car and the range of the laser scanners on left side.
+On the right hand side the model and TF transformes are shown. YOu can recognize the noise of the laser scanners.
+All in all several issues could be observed in the simulator, that exited on the real car, too.
+For example localization loss at certain positions, problems passing small doors, and event the parking task could vastly be developed using that simulator.

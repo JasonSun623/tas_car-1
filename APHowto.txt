@@ -1,0 +1,9 @@
+Starten:
+als root
+instantAP.sh -f
+startAP.sh
+
+
+Stoppen:
+pkill hostapd
+instantAP.sh -stop

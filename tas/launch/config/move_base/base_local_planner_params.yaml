@@ -1,0 +1,77 @@
+# local planner parameter file
+
+
+TrajectoryPlannerROS:
+  #Independent settings for the local costmap
+  
+  #acceleration limit
+  acc_lim_x: 2.5 #2.5
+  acc_lim_y: 2.5 #2.5
+  acc_lim_theta: 2.5 #3.2
+
+  #The maximum/minimum forward velocity allowed for the base in meters/sec 
+  max_vel_x: 0.75
+  min_vel_x: 0.25
+
+  #The maximum/minimum rotational velocity allowed for the base in radians/sec 
+  max_vel_theta: 0.5
+  min_vel_theta: -0.5
+
+  #The minimum rotational velocity allowed for the base while performing in-place rotations in radians/sec 
+  min_in_place_rotational_vel: 0.0
+
+  #Speed used for driving during escapes in meters/sec.
+  escape_vel: -0.3
+
+  holonomic_robot: false
+
+  #Goal Tolerance Parameters
+  yaw_goal_tolerance: 3.0
+  xy_goal_tolerance: 0.5 #0.5
+
+
+  #The amount of time to forward-simulate trajectories in seconds 
+  sim_time: 2.0
+
+  #The step size, in meters, to take between points on a given trajectory 
+  sim_granularity: 0.25 #0.25
+
+  #The step size, in radians, to take between angular samples on a given trajectory
+  #sim_angular_granularity: 0.025 #0.025
+  angular_sim_granularity: 0.01
+
+  #The number of samples to use when exploring the x velocity space 
+  vx_samples: 10
+
+  #The number of samples to use when exploring the theta velocity space 
+  vtheta_samples: 20
+
+  #The weighting for how much the controller should attempt to avoid obstacles 
+  occdist_scale: 0.1
+
+  #How far to look ahead in meters when scoring different in-place-rotation trajectories 
+  heading_lookahead: 0.8
+
+  #Whether to score based on the robot's heading to the path or its distance from the path 
+  heading_scoring: true
+
+  #How far to look ahead in time in seconds along the simulated trajectory when using heading scoring 
+  heading_scoring_timestep: 0.8
+
+  #Whether to use the Dynamic Window Approach
+  dwa: true
+
+  publish_cost_grid_pc: true
+
+  #How far the robot must travel in meters before oscillation flags are reset 
+  oscillation_reset_dist: 0.05 #0.05
+
+  meter_scoring: true
+
+  max_rotational_vel: 2.0
+  transform_tolerance: 0.3
+  goal_distance_bias: 0.4 #0.2
+  path_distance_bias: 1.0 #0.8
+  simple_attractor: false
+
+

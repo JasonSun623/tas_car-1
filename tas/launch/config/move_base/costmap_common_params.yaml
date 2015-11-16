@@ -1,0 +1,32 @@
+#The maximum range in meters at which to insert obstacles into the costmap using sensor data. 
+obstacle_range: 3.05
+
+#The maximum range in meters at which to raytrace out obstacles from the map using sensor data. 
+raytrace_range: 3.5
+
+#size of the robot
+footprint: [[0.33, 0.22], [0.33, -0.22], [-0.33, -0.22], [-0.33, 0.22]]
+
+inflation_radius: 1.5
+
+observation_sources: laser_scan_sensor_front laser_scan_sensor_back
+
+laser_scan_sensor_front: 
+  sensor_frame: hokuyo_front_link
+  data_type: LaserScan
+  topic: scan
+  marking: True
+  clearing: True
+
+laser_scan_sensor_back: 
+  sensor_frame: hokuyo_back_link
+  data_type: LaserScan
+  topic: scan_back
+  marking: True
+  clearing: True
+
+obstacle_layer:
+  obstacle_range: 3.05
+
+inflation_layer:
+  cost_scaling_factor: 20

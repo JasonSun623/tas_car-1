@@ -1,0 +1,194 @@
+/*!
+ ******************************************************************************
+ * \brief
+ * 	 ROS node, that calculates velocity from odom message
+ * \details
+ *
+ *
+ * \author Bernd Kast
+ *
+ *****************************************************************************/
+
+#include "odom_vel_calculator/odom_vel_calculator.h"
+
+//FILE* outfile;
+
+
+Butter2Order::Butter2Order(uint inputcount, double A1, double A2, double A3, double B1, double B2, double B3)
+    :_inputcount(inputcount),
+      _valid(false),
+      _x_1(Eigen::VectorXd::Zero(inputcount)),
+      _x_2(Eigen::VectorXd::Zero(inputcount)),
+      _xf_1(Eigen::VectorXd::Zero(inputcount)),
+      _xf_2(Eigen::VectorXd::Zero(inputcount)),
+      _xf(Eigen::VectorXd::Zero(inputcount))
+{
+    _A[0] = A1;
+    _A[1] = A2;
+    _A[2] = A3;
+    _B[0] = B1;
+    _B[1] = B2;
+    _B[2] = B3;
+}
+
+Butter2Order::~Butter2Order()
+{
+}
+
+const Eigen::VectorXd &Butter2Order::filter(const Eigen::VectorXd &input)
+{
+    if(input.size() != _inputcount)
+    {
+        throw std::runtime_error("Wrong input size for Filter");
+    }
+
+    if(!_valid)
+    {
+        _x_1 = input;
+        _x_2 = input;
+        _xf_1 = input;
+        _xf_2 = input;
+        _xf = input;
+        _valid = true;
+
+	
+    }
+    else
+    {
+        _xf = _B[0]*input + _B[1]*_x_1 + _B[2]*_x_2 - _A[1]*_xf_1 - _A[2]*_xf_2;
+
+        _x_2 = _x_1;
+        _x_1 = input;
+        _xf_2 = _xf_1;
+        _xf_1 = _xf;
+    }
+    return _xf;
+}
+
+void Butter2Order::reset()
+{
+    _valid = false;
+}
+
+
+
+ODOMVELCALCULATOR::ODOMVELCALCULATOR()
+{
+	m_odom_pub = m_Node.advertise<nav_msgs::Odometry>("/odom", 10);
+	m_odom_sub = m_Node.subscribe<nav_msgs::Odometry>("/odom_hector", 10, &ODOMVELCALCULATOR::odomCallback,this);
+
+	filter = new Butter2Order(6, 1.000000000000000, -1.561018075800718, 0.641351538057563, 0.020083365564211, 0.040166731128423, 0.020083365564211);
+	vel = Eigen::VectorXd::Zero(6);	
+	vel_filtered = Eigen::VectorXd::Zero(6);	
+
+	m_old_odometry_valid = false;
+}
+ODOMVELCALCULATOR::~ODOMVELCALCULATOR()
+{
+	if(filter)
+		delete filter;
+}
+
+void ODOMVELCALCULATOR::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_without_vel)
+{
+	nav_msgs::Odometry odom_with_vel;
+	odom_with_vel = *odom_without_vel;
+
+	Eigen::Quaterniond quat;
+
+	quat.x() = odom_without_vel->pose.pose.orientation.x;
+	quat.y() = odom_without_vel->pose.pose.orientation.y;
+	quat.z() = odom_without_vel->pose.pose.orientation.z;
+	quat.w() = odom_without_vel->pose.pose.orientation.w;
+
+	Eigen::Matrix3d R = quat.toRotationMatrix();
+
+	Eigen::Vector3d RPY = R.eulerAngles(0,1,2);
+
+	rotZ_old = rotZ;
+	rotZ = RPY(2);
+
+
+	if(m_old_odometry_valid)
+	{
+		double time = odom_without_vel->header.stamp.sec + 1e-9*odom_without_vel->header.stamp.nsec;
+
+		double timestep;
+
+		
+
+		timestep = (odom_without_vel->header.stamp.sec - m_old_odometry.header.stamp.sec) + 1e-9 * (odom_without_vel->header.stamp.nsec - m_old_odometry.header.stamp.nsec);
+		//ROS_INFO("X_old:%lf", m_old_odometry.pose.pose.position.x);
+		//ROS_INFO("X_new:%lf", odom_without_vel->pose.pose.position.x);
+
+		vel(0) = (odom_without_vel->pose.pose.position.x - m_old_odometry.pose.pose.position.x) / timestep;
+		vel(1) = (odom_without_vel->pose.pose.position.y - m_old_odometry.pose.pose.position.y) / timestep;
+		vel(2) = (odom_without_vel->pose.pose.position.z - m_old_odometry.pose.pose.position.z) / timestep;
+
+		vel(5) = (rotZ - rotZ_old);
+		
+
+		std::cout << "rotZ " << rotZ << std::endl;
+		std::cout << "rotZ_old " << rotZ_old << std::endl;
+		std::cout << "vel " << vel(5) << std::endl;
+		std::cout << M_PI << std::endl;
+		if((vel(5) - M_PI) > 0) 
+		{
+			vel(5) = vel(5) - 2 * M_PI;
+			std::cout << "> pi " << std::endl;
+		}	
+		if((vel(5) + M_PI) < 0) 
+		{
+			vel(5) = vel(5) + 2 * M_PI;
+			std::cout << "< pi " << std::endl;
+		}
+		
+		vel(5) = vel(5) / timestep;
+
+		vel_filtered = filter->filter(vel);
+		vel_filtered(5) = vel(5);
+
+//		fprintf(outfile, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", time, vel(0), vel(1), vel(2), vel(3), vel(4), (double) vel(5), vel_filtered(0), vel_filtered(1), vel_filtered(2), vel_filtered(3), vel_filtered(4), vel_filtered(5), rotZ, rotZ_old);
+
+		odom_with_vel.twist.twist.linear.x = vel_filtered(0);
+		odom_with_vel.twist.twist.linear.y = vel_filtered(1);
+		odom_with_vel.twist.twist.linear.z = vel_filtered(2);
+
+		odom_with_vel.twist.twist.angular.x = 0.0;
+		odom_with_vel.twist.twist.angular.y = 0.0;
+		odom_with_vel.twist.twist.angular.z = vel_filtered(5);
+		
+
+
+		m_odom_pub.publish(odom_with_vel);
+	}
+	m_old_odometry_valid = true;
+	m_old_odometry = *odom_without_vel;
+	/*
+	m_old_odometry.header.stamp.sec = odom_without_vel.header.stamp.sec;
+	m_old_odometry.header.stamp.nsec = odom_without_vel.header.stamp.nsec;
+
+	m_old_odometry.twist.twist.linear.x = odom_without_vel->twist.twist.linear.x;
+	m_old_odometry.twist.twist.linear.y = odom_without_vel->twist.twist.linear.y;
+	m_old_odometry.twist.twist.linear.z = odom_without_vel->twist.twist.linear.z;*/
+}
+
+
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "odom_vel_calculator");
+	ODOMVELCALCULATOR calculator;
+
+//	outfile = fopen("/home/tas_group_02/velocities.schinken", "w");
+
+
+	ros::spin();
+
+//	if(outfile)
+//		fclose(outfile);
+
+	return 0;
+}
+
+

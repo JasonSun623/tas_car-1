@@ -1,0 +1,31 @@
+<package>
+  <name>odom_vel_calculator</name>
+  <version>0.0.1</version>
+  <description>odom_vel_calculator</description>
+  <maintainer email="kastbernd@gmx.de">Bernd Kast</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/listener</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Bernd Kast</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>ics_utils</build_depend>
+  <build_depend>cmake_modules</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>run_depend</run_depend>
+  <run_depend>cmake_modules</run_depend>
+
+</package>
